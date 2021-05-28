@@ -54,7 +54,7 @@ public class WebLogAspect {
     @Around("webLog()")
     public Object doAround(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
-        //获取当前请求对象
+        //获取当前请求对象 --- 因为登录的时候，把用户信息保存到getRequestAttributes
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
         //记录请求信息(通过Logstash传入Elasticsearch)

@@ -81,7 +81,7 @@ public interface UmsAdminService {
     int updatePassword(UpdateAdminPasswordParam updatePasswordParam);
 
     /**
-     * 获取用户信息
+     * 获取用户信息 :基本信息 + 权限信息
      */
     UserDetails loadUserByUsername(String username);
 }

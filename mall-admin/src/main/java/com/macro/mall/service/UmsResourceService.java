@@ -35,7 +35,7 @@ public interface UmsResourceService {
     List<UmsResource> list(Long categoryId, String nameKeyword, String urlKeyword, Integer pageSize, Integer pageNum);
 
     /**
-     * 查询全部资源
+     * 查询全部资源 --- 所有接口
      */
     List<UmsResource> listAll();
 }

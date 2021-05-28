@@ -82,19 +82,28 @@ public class UmsAdminController {
         return CommonResult.success(tokenMap);
     }
 
+    /**
+     * Principal只是简单封装，内容只有一个用户名
+     * @param principal
+     * @return
+     */
     @ApiOperation(value = "获取当前登录用户信息")
     @RequestMapping(value = "/info", method = RequestMethod.GET)
     @ResponseBody
     public CommonResult getAdminInfo(Principal principal) {
-        if(principal==null){
+        // 用户名
+        if(principal == null){
             return CommonResult.unauthorized(null);
         }
         String username = principal.getName();
+        // 根据用户名查询用户基本信息
         UmsAdmin umsAdmin = adminService.getAdminByUsername(username);
         Map<String, Object> data = new HashMap<>();
         data.put("username", umsAdmin.getUsername());
+        // 根据用户id查询用户所有用的菜单信息
         data.put("menus", roleService.getMenuList(umsAdmin.getId()));
         data.put("icon", umsAdmin.getIcon());
+        // 根据用户id，查询用户拥有的角色
         List<UmsRole> roleList = adminService.getRoleList(umsAdmin.getId());
         if(CollUtil.isNotEmpty(roleList)){
             List<String> roles = roleList.stream().map(UmsRole::getName).collect(Collectors.toList());
@@ -103,6 +112,10 @@ public class UmsAdminController {
         return CommonResult.success(data);
     }
 
+    /**
+     * 登出功能，由springsecurity进行处理
+     * @return
+     */
     @ApiOperation(value = "登出功能")
     @RequestMapping(value = "/logout", method = RequestMethod.POST)
     @ResponseBody

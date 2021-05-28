@@ -59,6 +59,12 @@ public class UmsAdminServiceImpl implements UmsAdminService {
     @Autowired
     private UmsAdminCacheService adminCacheService;
 
+    /**
+     * 根据用户名查询用户信息 ---(没有权限信息) 权限校验的时候使用，
+     * 查询出的结果应该保存在redis中，下次要是再访问就不需要去数据库中查询了
+     * @param username
+     * @return
+     */
     @Override
     public UmsAdmin getAdminByUsername(String username) {
         UmsAdmin admin = adminCacheService.getAdmin(username);
@@ -74,6 +80,11 @@ public class UmsAdminServiceImpl implements UmsAdminService {
         return null;
     }
 
+    /**
+     * 用户注册
+     * @param umsAdminParam
+     * @return
+     */
     @Override
     public UmsAdmin register(UmsAdminParam umsAdminParam) {
         UmsAdmin umsAdmin = new UmsAdmin();
@@ -99,6 +110,7 @@ public class UmsAdminServiceImpl implements UmsAdminService {
         String token = null;
         //密码需要客户端加密后传递
         try {
+            // 根据用户名查询管理员所有信息: 基本信息 + 权限信息
             UserDetails userDetails = loadUserByUsername(username);
             if(!passwordEncoder.matches(password,userDetails.getPassword())){
                 Asserts.fail("密码不正确");
@@ -106,10 +118,14 @@ public class UmsAdminServiceImpl implements UmsAdminService {
             if(!userDetails.isEnabled()){
                 Asserts.fail("帐号已被禁用");
             }
+            // 把用户信息封装到 UsernamePasswordAuthenticationToken
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            // 存放到springsecurity上下文中，用与权限校验
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            // 生成token
             token = jwtTokenUtil.generateToken(userDetails);
 //            updateLoginTimeByUsername(username);
+            // 记录登录日志到数据库
             insertLoginLog(username);
         } catch (AuthenticationException e) {
             LOGGER.warn("登录异常:{}", e.getMessage());
@@ -221,6 +237,11 @@ public class UmsAdminServiceImpl implements UmsAdminService {
         return adminRoleRelationDao.getRoleList(adminId);
     }
 
+    /**
+     * 根据用户id，查询用户所有用的权限
+     * @param adminId
+     * @return
+     */
     @Override
     public List<UmsResource> getResourceList(Long adminId) {
         List<UmsResource> resourceList = adminCacheService.getResourceList(adminId);
@@ -257,12 +278,19 @@ public class UmsAdminServiceImpl implements UmsAdminService {
         return 1;
     }
 
+    /**
+     * 查询用户信息: 基本信息 + 权限信息
+     * @param username
+     * @return
+     */
     @Override
     public UserDetails loadUserByUsername(String username){
-        //获取用户信息
+        // 获取用户信息
         UmsAdmin admin = getAdminByUsername(username);
         if (admin != null) {
+            // 查询用户权限信息
             List<UmsResource> resourceList = getResourceList(admin.getId());
+            // 把权限信息和用户信息封装
             return new AdminUserDetails(admin,resourceList);
         }
         throw new UsernameNotFoundException("用户名或密码错误");

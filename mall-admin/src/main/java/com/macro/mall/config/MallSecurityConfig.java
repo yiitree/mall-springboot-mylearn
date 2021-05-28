@@ -31,20 +31,29 @@ public class MallSecurityConfig extends SecurityConfig {
     @Autowired
     private UmsResourceService resourceService;
 
+    /**
+     * 根据用户名，查询用户信息: 基本信息 + 权限信息
+     * @return
+     */
     @Bean
     public UserDetailsService userDetailsService() {
-        //获取登录用户信息
         return username -> adminService.loadUserByUsername(username);
     }
 
+    /**
+     * 从数据库中查询所有接口信息，这些接口用于权限校验，有相应权限才可以访问，具体逻辑看方法调用
+     * @return
+     */
     @Bean
     public DynamicSecurityService dynamicSecurityService() {
         return new DynamicSecurityService() {
             @Override
             public Map<String, ConfigAttribute> loadDataSource() {
                 Map<String, ConfigAttribute> map = new ConcurrentHashMap<>();
+                // 查询全部资源
                 List<UmsResource> resourceList = resourceService.listAll();
                 for (UmsResource resource : resourceList) {
+                    // 把所有资源保存到springsecurity的config中 --- url , id:name
                     map.put(resource.getUrl(), new org.springframework.security.access.SecurityConfig(resource.getId() + ":" + resource.getName()));
                 }
                 return map;
